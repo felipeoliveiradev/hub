@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  app:
+    build: .
+    command: ./.docker/start.sh
+    ports:
+      - 3010:3000
+    volumes:
+      - .:/home/node/app
+      - '/etc/timezone:/etc/timezone:ro'
+      - '/etc/localtime:/etc/localtime:ro'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    labels:
+      filebeat_collector: true
+
+  db:
+    image: mysql:8.0
+    environment:
+      - MYSQL_DATABASE=micro_videos
+      - MYSQL_ROOT_PASSWORD=root
+    volumes:
+      - ./.docker/dbdata:/var/lib/mysql:delegated
+    security_opt:
+      - seccomp:unconfined
+
+  rabbitmq:
+    build: ./.docker/rabbitmq
+    container_name: 'rabbitmq'
+    ports:
+      - 5672:5672
+      - 15672:15672
+      - 15675:15675
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
